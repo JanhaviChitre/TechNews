@@ -1,0 +1,541 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Title: {{ $json.title }}\nContent: {{ $json.contentSnippet || $json.content || '' }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a technology news analyst. Given an article title and content, classify it into exactly one category: AI & Machine Learning, Cybersecurity, Cloud & Infrastructure, Startups & Funding, Hardware & Devices, Software Development, Big Tech & Policy, or Other. Then write a concise 2-3 sentence summary of the article. Return your answer using the provided JSON structure only."
+        }
+      },
+      "id": "467a5971-23ec-48f8-852f-de17a040e8c1",
+      "name": "AI Agent - Categorize & Summarize",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1280,
+        2944
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"category\": \"AI & Machine Learning\",\n  \"summary\": \"A concise 2-3 sentence summary of the article.\"\n}"
+      },
+      "id": "01a72e47-8937-439e-bd08-aac635c37308",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1440,
+        3184
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://techcrunch.com/feed/",
+        "options": {}
+      },
+      "id": "f102c0b0-1fa1-44ae-a8cf-535745310895",
+      "name": "RSS Feed - TechCrunch2",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [
+        528,
+        2912
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://feeds.arstechnica.com/arstechnica/index",
+        "options": {}
+      },
+      "id": "9c767dc1-d974-4f14-8746-e813112a08d3",
+      "name": "RSS Feed - Ars Technica2",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [
+        528,
+        3120
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.hindustantimes.com/feeds/rss/technology/rssfeed.xml",
+        "options": {}
+      },
+      "id": "b56415c2-c609-418b-b2fc-d19bd6dc1ce1",
+      "name": "RSS Feed - Hindustan Times Tech2",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [
+        528,
+        3312
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "841c2706-eb08-4345-ae45-18d925b23cee",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        96,
+        3088
+      ],
+      "notes": "Runs every day at 07:00. Adjust the cron expression as needed."
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "id": "3417c74f-fc57-452d-961d-0cb7ad3e186c",
+      "name": "Merge the contents of RSS Feeds",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        800,
+        3120
+      ],
+      "notes": "Combines items from all three RSS feeds into a single list."
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "id",
+          "cachedResultName": "",
+          "cachedResultUrl": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "",
+          "cachedResultUrl": ""
+        }
+      },
+      "id": "39c201f0-459f-4ea4-9393-b8ccc2909574",
+      "name": "Sheet for Gmail and Slack",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1712,
+        3056
+      ],
+      "notes": "1) Replace REPLACE_WITH_GOOGLE_SHEET_ID with your spreadsheet ID. 2) Set sheetName to your actual tab name. 3) Connect your own Google Sheets OAuth2 credential. 4) Sheet must have header columns: Title, Link, Published, Category, AI Summary."
+    },
+    {
+      "parameters": {
+        "subject": "=Daily Technology News Report",
+        "emailType": "text",
+        "message": "={{$json.report}}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "9e68ec6b-6521-4e0f-965e-a9b2ea4bae18",
+      "name": "Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2144,
+        2992
+      ],
+      "webhookId": "4830d750-9258-4bb7-a08d-a371b61d3650",
+      "notes": "Replace REPLACE_WITH_YOUR_EMAIL@gmail.com with the recipient address. Connect your own Gmail OAuth2 credential (sign in with the Google account that should send the email)."
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "",
+          "cachedResultUrl": ""
+        },
+        "text": "={{ $json.report }}",
+        "otherOptions": {
+          "mrkdwn": true,
+          "unfurl_links": false
+        }
+      },
+      "id": "859019c0-49c6-47f4-bd4f-7b3be3c71705",
+      "name": "Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        2128,
+        3184
+      ],
+      "webhookId": "REPLACE_AUTO_GENERATED",
+      "notes": "Create a Slack credential (Credentials > New > Slack API, or Slack OAuth2). Pick the target channel in 'channelId' (or paste its channel ID). The bot/app must be invited to that channel (/invite @YourBotName)."
+    },
+    {
+      "parameters": {
+        "chatId": "8198199935",
+        "text": "={{ $json.report }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2224,
+        3472
+      ],
+      "id": "e095bdeb-595e-4bce-b925-6b9645878b13",
+      "name": "Telegram",
+      "webhookId": "5cffeac7-563c-4c54-8ab6-b679f835653b"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1lMYFJMAB03yo83dHKpRXyVjiFhBM2i5ArQppwf0eUFE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lMYFJMAB03yo83dHKpRXyVjiFhBM2i5ArQppwf0eUFE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Title": "={{ $('Limit for the News').item.json.title }}",
+            "Link": "={{ $('Limit for the News').item.json.link }}",
+            "Published": "={{ $('Limit for the News').item.json.isoDate || $('Limit for the News').item.json.pubDate }}",
+            "Category": "={{ $json.output.category }}",
+            "AI Summary": "={{ $json.output.summary }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Link",
+              "displayName": "Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Published",
+              "displayName": "Published",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI Summary",
+              "displayName": "AI Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "1f1d7b91-bbd4-4863-bff1-4f1bb5ca41a3",
+      "name": "Sheet for Telegram",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1760,
+        3328
+      ],
+      "credentials": {},
+      "notes": "1) Replace REPLACE_WITH_GOOGLE_SHEET_ID with your spreadsheet ID. 2) Set sheetName to your actual tab name. 3) Connect your own Google Sheets OAuth2 credential. 4) Sheet must have header columns: Title, Link, Published, Category, AI Summary."
+    },
+    {
+      "parameters": {
+        "maxItems": 5
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        3248
+      ],
+      "id": "856a4e83-339a-4471-a3d9-64215cd00da0",
+      "name": "Limit for Telegram"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "d64f793d-e01d-4c89-a0d0-49d0340fcafc",
+      "name": "Groq LLM",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1248,
+        3184
+      ],
+      "notes": "Create a 'Groq' credential in n8n (Credentials > New > Groq API) and paste your Groq API key (gsk_...) here."
+    },
+    {
+      "parameters": {
+        "maxItems": 10
+      },
+      "id": "aedde4b1-52c2-4291-936d-be6f0632ea1b",
+      "name": "Limit for the News",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        3120
+      ],
+      "notes": "Caps the number of articles processed per run (shared by both Sheets/notification branches). Adjust maxItems as needed."
+    },
+    {
+      "parameters": {
+        "jsCode": "let report = \"\\ud83d\\ude80 Daily Technology News Report\\n\\n\";\n\nfor (const item of $input.all()) {\n\n  const title = (item.json[\"Title\"] || \"\").replace(/^=/, \"\");\n\n  report += `\\ud83d\\udcf0 ${title}\\n`;\n  report += `\\ud83d\\udcc5 ${item.json[\"Published\"]}\\n`;\n  report += `\\ud83c\\udff7\\ufe0f ${item.json[\"Category\"]}\\n`;\n  report += `${item.json[\"AI Summary\"]}\\n`;\n  report += `\\ud83d\\udd17 ${item.json[\"Link\"]}\\n\\n`;\n}\n\nreturn [\n  {\n    json: {\n      report\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        3120
+      ],
+      "id": "fadcf680-f62d-49cc-b7d7-a88d2bbd41d4",
+      "name": "Code in JS for reports in Gmail and Slack"
+    },
+    {
+      "parameters": {
+        "jsCode": "let report = \"\\ud83d\\ude80 Daily Technology News Report\\n\\n\";\n\nfor (const item of $input.all()) {\n\n  const title = (item.json[\"Title\"] || \"\").replace(/^=/, \"\");\n\n  report += `\\ud83d\\udcf0 ${title}\\n`;\n  report += `\\ud83d\\udcc5 ${item.json[\"Published\"]}\\n`;\n  report += `\\ud83c\\udff7\\ufe0f ${item.json[\"Category\"]}\\n`;\n  report += `${item.json[\"AI Summary\"]}\\n`;\n  report += `\\ud83d\\udd17 ${item.json[\"Link\"]}\\n\\n`;\n}\n\nreturn [\n  {\n    json: {\n      report\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1936,
+        3312
+      ],
+      "id": "40ba9f76-76f0-4e79-825a-fce8a77233a9",
+      "name": "Code in JS for reports in Telegram"
+    }
+  ],
+  "connections": {
+    "AI Agent - Categorize & Summarize": {
+      "main": [
+        [
+          {
+            "node": "Sheet for Gmail and Slack",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Limit for Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent - Categorize & Summarize",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Feed - TechCrunch2": {
+      "main": [
+        [
+          {
+            "node": "Merge the contents of RSS Feeds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Feed - Ars Technica2": {
+      "main": [
+        [
+          {
+            "node": "Merge the contents of RSS Feeds",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "RSS Feed - Hindustan Times Tech2": {
+      "main": [
+        [
+          {
+            "node": "Merge the contents of RSS Feeds",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "RSS Feed - Hindustan Times Tech2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS Feed - Ars Technica2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS Feed - TechCrunch2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge the contents of RSS Feeds": {
+      "main": [
+        [
+          {
+            "node": "Limit for the News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheet for Gmail and Slack": {
+      "main": [
+        [
+          {
+            "node": "Code in JS for reports in Gmail and Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheet for Telegram": {
+      "main": [
+        [
+          {
+            "node": "Code in JS for reports in Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit for Telegram": {
+      "main": [
+        [
+          {
+            "node": "Sheet for Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent - Categorize & Summarize",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit for the News": {
+      "main": [
+        [
+          {
+            "node": "AI Agent - Categorize & Summarize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JS for reports in Gmail and Slack": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JS for reports in Telegram": {
+      "main": [
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fd55f2a057148582dbd67c908333d1d14959692adb3c3b31beb54d296e3b7d7d"
+  }
+}
