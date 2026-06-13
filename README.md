@@ -73,6 +73,7 @@
                                                   │   Telegram   │
                                                   └──────────────┘
 ```
+![Workflow](images/Workflow.png)
 #### Stage 1 — Trigger
 - **Node**: `Schedule Trigger`
 - **Operation**: Initiates the workflow at a configured time interval (e.g., daily).
@@ -107,8 +108,16 @@
 - **Nodes**: `Gmail`, `Slack`, `Telegram`
 - **Operation**:
   - `Gmail` sends the report from Code in JS for Gmail and Slack as an email to a configured recipient.
+ 
+    ![Gmail Output](images/GmailOutput.png)
+    
   - `Slack` posts the same report from Code in JS for Gmail and Slack as a message to a configured Slack channel.
+ 
+    ![Slack Output](images/SlackOutput.png)
+    
   - `Telegram` sends the report from Code in JS for Telegram as a message to a configured Telegram chat.
+
+    ![Telegram Output](images/TelegramOutput.png)
 
 ### Key fields & output:
 - **Title, Link, Published:** taken from the RSS item.
